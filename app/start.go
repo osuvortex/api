@@ -11,7 +11,7 @@ import (
 	"gopkg.in/redis.v5"
 	"zxq.co/ripple/rippleapi/app/internals"
 	"zxq.co/ripple/rippleapi/app/peppy"
-	"zxq.co/ripple/rippleapi/app/v1"
+	v1 "zxq.co/ripple/rippleapi/app/v1"
 	"zxq.co/ripple/rippleapi/app/websockets"
 	"zxq.co/ripple/rippleapi/common"
 )
@@ -37,7 +37,13 @@ func Start(conf common.Conf, dbO *sqlx.DB) *fhr.Router {
 	// sentry
 	if conf.SentryDSN != "" {
 		ravenClient, err := raven.New(conf.SentryDSN)
-		ravenClient.SetRelease(common.Version)
+		var release string
+		if common.GitHash != "" {
+			release = common.GitHash
+		} else {
+			release = common.Version
+		}
+		ravenClient.SetRelease(release)
 		if err != nil {
 			fmt.Println(err)
 		} else {
@@ -114,12 +120,14 @@ func Start(conf common.Conf, dbO *sqlx.DB) *fhr.Router {
 		r.Method("/api/v1/users/self/donor_info", v1.UsersSelfDonorInfoGET, common.PrivilegeReadConfidential)
 		r.Method("/api/v1/users/self/favourite_mode", v1.UsersSelfFavouriteModeGET, common.PrivilegeReadConfidential)
 		r.Method("/api/v1/users/self/settings", v1.UsersSelfSettingsGET, common.PrivilegeReadConfidential)
+		r.Method("/api/v1/users/self/scoreboard", v1.UserSelfScoreboardGET, common.PrivilegeReadConfidential)
 
 		// Write privilege required
 		r.POSTMethod("/api/v1/friends/add", v1.FriendsAddPOST, common.PrivilegeWrite)
 		r.POSTMethod("/api/v1/friends/del", v1.FriendsDelPOST, common.PrivilegeWrite)
 		r.POSTMethod("/api/v1/users/self/settings", v1.UsersSelfSettingsPOST, common.PrivilegeWrite)
 		r.POSTMethod("/api/v1/users/self/userpage", v1.UserSelfUserpagePOST, common.PrivilegeWrite)
+		r.POSTMethod("/api/v1/users/self/scoreboard", v1.UserSelfScoreboardPOST, common.PrivilegeWrite)
 		r.POSTMethod("/api/v1/beatmaps/rank_requests", v1.BeatmapRankRequestsSubmitPOST, common.PrivilegeWrite)
 
 		// Admin: RAP

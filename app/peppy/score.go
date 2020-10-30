@@ -2,7 +2,6 @@ package peppy
 
 import (
 	"database/sql"
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -62,7 +61,6 @@ func GetScores(c *fasthttp.RequestCtx, db *sqlx.DB) {
 	  ` + extraWhere + `
 	  AND ` + relaxWhere + `
 	ORDER BY ` + sb + ` DESC LIMIT ` + strconv.Itoa(common.InString(1, query(c, "limit"), 100, 50))
-	fmt.Printf("%s", q)
 	rows, err := db.Query(q,
 		append([]interface{}{beatmapMD5, genmodei(query(c, "m")), mods, mods}, extraParams...)...)
 	if err != nil {

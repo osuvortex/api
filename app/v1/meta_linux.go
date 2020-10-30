@@ -55,13 +55,10 @@ func MetaUpdateGET(md common.MethodData) common.CodeMessager {
 		if !execCommand("git", "pull", "origin", "master") {
 			return
 		}
-		// go get
-		//        -u: update all dependencies
-		//        -d: stop after downloading deps
-		if !execCommand("go", "get", "-v", "-u", "-d") {
+		if !execCommand("go", "get", "-v", "-d") {
 			return
 		}
-		if !execCommand("bash", "-c", "go build -v -ldflags \"-X main.Version=`git rev-parse HEAD`\"") {
+		if !execCommand("bash", "-c", "go build -v -ldflags \"-X main.GitHash=`git rev-parse HEAD`\"") {
 			return
 		}
 

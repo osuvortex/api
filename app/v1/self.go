@@ -2,7 +2,7 @@ package v1
 
 import (
 	"strings"
-
+//	"fmt"
 	emoji "github.com/tmdvs/Go-Emoji-Utils"
 	"zxq.co/ripple/playstyle"
 	"zxq.co/ripple/rippleapi/common"
@@ -257,43 +257,25 @@ WHERE id = ? LIMIT 1`, md.ID()).Scan(
 // scoreboard preferences
 func UserSelfScoreboardPOST(md common.MethodData) common.CodeMessager {
 	var d scoreboardData
-	err := md.Unmarshal(&d)
-	if err != nil {
+
+	hey := md.Unmarshal(&d)
+	if hey != nil {
 		return ErrBadJSON
 	}
-	q := new(common.UpdateQuery)
 
-	type scoreboardDataField struct {
-		value         *int
-		allowedValues []int
-		column        string
-	}
-	for _, field := range []scoreboardDataField{
-		{d.Scoreboard.Mode, []int{modeClassic, modeRelax}, "u.is_relax"},
-		{d.Scoreboard.Display.Classic, validDisplayModes, "scoreboard_display_classic"},
-		{d.Scoreboard.Display.Relax, validDisplayModes, "scoreboard_display_relax"},
-		{d.Overwrite.Std, validOverwrites, "score_overwrite_std"},
-		{d.Overwrite.Taiko, validOverwrites, "score_overwrite_taiko"},
-		{d.Overwrite.Ctb, validOverwrites, "score_overwrite_ctb"},
-		{d.Overwrite.Mania, validOverwrites, "score_overwrite_mania"},
-		{d.AutoLast.Classic, validAutoLast, "auto_last_classic"},
-		{d.AutoLast.Relax, validAutoLast, "auto_last_relax"},
-	} {
-		if field.value == nil {
-			continue
-		}
-		if !contains(*field.value, field.allowedValues) {
-			return ErrBadField(field.column)
-		}
-		q.Add(field.column, field.value)
-	}
-	_, err = md.DB.Exec(
-		`UPDATE users_preferences, users AS u
-		SET `+q.Fields()+`
-		WHERE users_preferences.id = ? AND u.id = ?
-		LIMIT 1`,
-		append(q.Parameters, md.ID(), md.ID())...,
-	)
+	q := new(common.UpdateQuery).
+		Add("u.is_relax", d.Scoreboard.Mode).
+		Add("up.scoreboard_display_classic", d.Scoreboard.Display.Classic).
+		Add("up.scoreboard_display_relax", d.Scoreboard.Display.Relax).
+		Add("up.score_overwrite_std", d.Overwrite.Std).
+		Add("up.score_overwrite_taiko", d.Overwrite.Taiko).
+		Add("up.score_overwrite_ctb", d.Overwrite.Ctb).
+		Add("up.score_overwrite_mania", d.Overwrite.Mania).
+		Add("up.auto_last_classic", d.AutoLast.Classic).
+		Add("up.auto_last_relax", d.AutoLast.Relax)
+
+	_, err := md.DB.Exec("UPDATE users_preferences up, users u SET "+q.Fields()+" WHERE up.id = u.id AND u.id = ?", append(q.Parameters, md.ID())...)
+
 	if err != nil {
 		md.Err(err)
 		return Err500
